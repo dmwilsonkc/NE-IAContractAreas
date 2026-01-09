@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Union Contract Jurisdictions - Nebraska & Iowa</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/topojson@3.0.2/dist/topojson.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        #header {
+            background-color: #1a4d2e;
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+        }
+
+        #header h1 {
+            margin-bottom: 5px;
+            font-size: 24px;
+        }
+
+        #header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        #map {
+            height: calc(100vh - 200px);
+            width: 100%;
+        }
+
+        #legend {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            position: absolute;
+            bottom: 30px;
+            right: 10px;
+            z-index: 1000;
+            max-width: 350px;
+        }
+
+        #legend h3 {
+            margin-bottom: 10px;
+            font-size: 16px;
+            border-bottom: 2px solid #1a4d2e;
+            padding-bottom: 5px;
+        }
+
+        .legend-section {
+            margin-bottom: 15px;
+        }
+
+        .legend-section h4 {
+            font-size: 13px;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+            font-size: 12px;
+        }
+
+        .legend-color {
+            width: 30px;
+            height: 20px;
+            margin-right: 8px;
+            border: 1px solid #666;
+            border-radius: 3px;
+        }
+
+        .local-info {
+            font-size: 11px;
+            color: #666;
+            margin-top: 3px;
+            padding-left: 38px;
+        }
+
+        /* Print styles */
+        @media print {
+            #header {
+                padding: 10px;
+            }
+
+            #header h1 {
+                font-size: 20px;
+            }
+
+            #map {
+                height: 800px !important;
+                page-break-inside: avoid;
+            }
+
+            #legend {
+                position: relative;
+                bottom: auto;
+                right: auto;
+                box-shadow: none;
+                border: 1px solid #ccc;
+                margin: 20px;
+                page-break-inside: avoid;
+            }
+
+            .leaflet-control-zoom {
+                display: none;
+            }
+        }
+
+        .leaflet-popup-content {
+            font-size: 14px;
+        }
+
+        .leaflet-popup-content h4 {
+            margin-bottom: 8px;
+            color: #1a4d2e;
+        }
+
+        .leaflet-popup-content p {
+            margin: 4px 0;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>Union Contract Jurisdictions</h1>
+        <p>Carpenters LU 427 | Interior Systems LU 1306 | Millwright LU 1463</p>
+    </div>
+
+    <div id="map"></div>
+
+    <div id="legend">
+        <h3>Contract Jurisdictions</h3>
+        
+        <div class="legend-section">
+            <h4>Carpenters LU 427</h4>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #2E86AB;"></div>
+                <span>Metro Agreement</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #A23B72;"></div>
+                <span>Lincoln & Outstate Agreement</span>
+            </div>
+            <div class="local-info">10761 Virginia Plaza, Papillion NE 68128 | 402-571-2561</div>
+        </div>
+
+        <div class="legend-section">
+            <h4>Interior Systems LU 1306</h4>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #F18F01;"></div>
+                <span>LU 1306 Agreement</span>
+            </div>
+            <div class="local-info">10761 Virginia Plaza, Papillion NE 68128 | 402-571-2561</div>
+        </div>
+
+        <div class="legend-section">
+            <h4>Millwright LU 1463</h4>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #6A994E;"></div>
+                <span>LU 1463 Agreement</span>
+            </div>
+            <div class="local-info">10761 Virginia Plaza, Papillion NE 68128 | 402-571-2561</div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize map centered on Nebraska/Iowa region
+        const map = L.map('map').setView([41.5, -98.5], 7);
+
+        // Add base map tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 18
+        }).addTo(map);
+
+        // Define colors for each agreement
+        const colors = {
+            'LU427_Metro': '#2E86AB',
+            'LU427_LincolnOutstate': '#A23B72',
+            'LU1306': '#F18F01',
+            'LU1463': '#6A994E'
+        };
+
+        // County jurisdiction data
+        const jurisdictions = {
+            // LU 427 Metro Agreement - Nebraska
+            'Antelope, NE': 'LU427_Metro',
+            'Boone, NE': 'LU427_Metro',
+            'Burt, NE': 'LU427_Metro',
+            'Butler, NE': 'LU427_Metro',
+            'Cass, NE': 'LU427_Metro',
+            'Colfax, NE': 'LU427_Metro',
+            'Cuming, NE': 'LU427_Metro',
+            'Dodge, NE': 'LU427_Metro',
+            'Douglas, NE': 'LU427_Metro',
+            'Knox, NE': 'LU427_Metro',
+            'Madison, NE': 'LU427_Metro',
+            'Merrick, NE': 'LU427_Metro',
+            'Nance, NE': 'LU427_Metro',
+            'Otoe, NE': 'LU427_Metro',
+            'Pierce, NE': 'LU427_Metro',
+            'Platte, NE': 'LU427_Metro',
+            'Polk, NE': 'LU427_Metro',
+            'Sarpy, NE': 'LU427_Metro',
+            'Saunders, NE': 'LU427_Metro',
+            'Stanton, NE': 'LU427_Metro',
+            'Washington, NE': 'LU427_Metro',
+            'Wayne, NE': 'LU427_Metro',
+            
+            // LU 427 Metro Agreement - Iowa
+            'Audubon, IA': 'LU427_Metro',
+            'Cass, IA': 'LU427_Metro',
+            'Fremont, IA': 'LU427_Metro',
+            'Harrison, IA': 'LU427_Metro',
+            'Mills, IA': 'LU427_Metro',
+            'Montgomery, IA': 'LU427_Metro',
+            'Page, IA': 'LU427_Metro',
+            'Pottawattamie, IA': 'LU427_Metro',
+            'Shelby, IA': 'LU427_Metro',
+
+            // LU 427 Lincoln and Outstate Agreement
+            'Clay, NE': 'LU427_LincolnOutstate',
+            'Fillmore, NE': 'LU427_LincolnOutstate',
+            'Gage, NE': 'LU427_LincolnOutstate',
+            'Hamilton, NE': 'LU427_LincolnOutstate',
+            'Jefferson, NE': 'LU427_LincolnOutstate',
+            'Johnson, NE': 'LU427_LincolnOutstate',
+            'Lancaster, NE': 'LU427_LincolnOutstate',
+            'Nemaha, NE': 'LU427_LincolnOutstate',
+            'Nuckolls, NE': 'LU427_LincolnOutstate',
+            'Pawnee, NE': 'LU427_LincolnOutstate',
+            'Richardson, NE': 'LU427_LincolnOutstate',
+            'Saline, NE': 'LU427_LincolnOutstate',
+            'Seward, NE': 'LU427_LincolnOutstate',
+            'Thayer, NE': 'LU427_LincolnOutstate',
+            'York, NE': 'LU427_LincolnOutstate',
+            'Adams, NE': 'LU427_LincolnOutstate',
+            'Arthur, NE': 'LU427_LincolnOutstate',
+            'Banner, NE': 'LU427_LincolnOutstate',
+            'Blaine, NE': 'LU427_LincolnOutstate',
+            'Box Butte, NE': 'LU427_LincolnOutstate',
+            'Boyd, NE': 'LU427_LincolnOutstate',
+            'Brown, NE': 'LU427_LincolnOutstate',
+            'Buffalo, NE': 'LU427_LincolnOutstate',
+            'Chase, NE': 'LU427_LincolnOutstate',
+            'Cherry, NE': 'LU427_LincolnOutstate',
+            'Cheyenne, NE': 'LU427_LincolnOutstate',
+            'Custer, NE': 'LU427_LincolnOutstate',
+            'Dawes, NE': 'LU427_LincolnOutstate',
+            'Dawson, NE': 'LU427_LincolnOutstate',
+            'Deuel, NE': 'LU427_LincolnOutstate',
+            'Dundy, NE': 'LU427_LincolnOutstate',
+            'Franklin, NE': 'LU427_LincolnOutstate',
+            'Frontier, NE': 'LU427_LincolnOutstate',
+            'Furnas, NE': 'LU427_LincolnOutstate',
+            'Garden, NE': 'LU427_LincolnOutstate',
+            'Garfield, NE': 'LU427_LincolnOutstate',
+            'Gosper, NE': 'LU427_LincolnOutstate',
+            'Grant, NE': 'LU427_LincolnOutstate',
+            'Greeley, NE': 'LU427_LincolnOutstate',
+            'Hall, NE': 'LU427_LincolnOutstate',
+            'Harlan, NE': 'LU427_LincolnOutstate',
+            'Hayes, NE': 'LU427_LincolnOutstate',
+            'Hitchcock, NE': 'LU427_LincolnOutstate',
+            'Holt, NE': 'LU427_LincolnOutstate',
+            'Hooker, NE': 'LU427_LincolnOutstate',
+            'Howard, NE': 'LU427_LincolnOutstate',
+            'Kearney, NE': 'LU427_LincolnOutstate',
+            'Keith, NE': 'LU427_LincolnOutstate',
+            'Keya Paha, NE': 'LU427_LincolnOutstate',
+            'Kimball, NE': 'LU427_LincolnOutstate',
+            'Lincoln, NE': 'LU427_LincolnOutstate',
+            'Logan, NE': 'LU427_LincolnOutstate',
+            'Loup, NE': 'LU427_LincolnOutstate',
+            'McPherson, NE': 'LU427_LincolnOutstate',
+            'Morrill, NE': 'LU427_LincolnOutstate',
+            'Perkins, NE': 'LU427_LincolnOutstate',
+            'Phelps, NE': 'LU427_LincolnOutstate',
+            'Red Willow, NE': 'LU427_LincolnOutstate',
+            'Rock, NE': 'LU427_LincolnOutstate',
+            'Scotts Bluff, NE': 'LU427_LincolnOutstate',
+            'Sheridan, NE': 'LU427_LincolnOutstate',
+            'Sherman, NE': 'LU427_LincolnOutstate',
+            'Sioux, NE': 'LU427_LincolnOutstate',
+            'Thomas, NE': 'LU427_LincolnOutstate',
+            'Valley, NE': 'LU427_LincolnOutstate',
+            'Webster, NE': 'LU427_LincolnOutstate',
+            'Wheeler, NE': 'LU427_LincolnOutstate'
+        };
+
+        // LU 1306 covers entire Nebraska except Cedar, Dakota, Dixon, and Thurston
+        // Plus the same Iowa counties as LU 427 Metro
+        const lu1306Excluded = ['Cedar, NE', 'Dakota, NE', 'Dixon, NE', 'Thurston, NE'];
+
+        // LU 1463 Iowa counties
+        const lu1463IowaCcounties = [
+            'Adair, IA', 'Adams, IA', 'Audubon, IA', 'Boone, IA', 'Buena Vista, IA',
+            'Calhoun, IA', 'Carroll, IA', 'Cass, IA', 'Cherokee, IA', 'Clarke, IA',
+            'Clay, IA', 'Crawford, IA', 'Dallas, IA', 'Decatur, IA', 'Dickinson, IA',
+            'Emmet, IA', 'Fremont, IA', 'Greene, IA', 'Guthrie, IA', 'Hamilton, IA',
+            'Hardin, IA', 'Harrison, IA', 'Humboldt, IA', 'Ida, IA', 'Jasper, IA',
+            'Lucas, IA', 'Lyon, IA', 'Madison, IA', 'Marion, IA', 'Marshall, IA',
+            'Mills, IA', 'Monona, IA', 'Montgomery, IA', "O'Brien, IA", 'Osceola, IA',
+            'Page, IA', 'Palo Alto, IA', 'Plymouth, IA', 'Pocahontas, IA', 'Polk, IA',
+            'Pottawattamie, IA', 'Poweshiek, IA', 'Ringgold, IA', 'Sac, IA', 'Shelby, IA',
+            'Sioux, IA', 'Story, IA', 'Taylor, IA', 'Union, IA', 'Warren, IA',
+            'Webster, IA', 'Woodbury, IA'
+        ];
+
+        // Load county boundaries using the US Atlas TopoJSON
+        // We'll use a CDN-hosted version that includes county boundaries
+        loadCountyBoundaries();
+
+        async function loadCountyBoundaries() {
+            try {
+                // Load county boundaries for NE, IA, and SD
+                const response = await fetch('https://cdn.jsdelivr.net/npm/us-atlas@3/counties-10m.json');
+                const us = await response.json();
+                
+                // Convert TopoJSON to GeoJSON
+                const counties = topojson.feature(us, us.objects.counties);
+                
+                // We need state FIPS codes: NE=31, IA=19, SD=46
+                const stateFips = { '31': 'NE', '19': 'IA', '46': 'SD' };
+                
+                // Filter and process counties
+                counties.features.forEach(feature => {
+                    const fips = feature.id;
+                    const stateFipsCode = fips.substring(0, 2);
+                    const state = stateFips[stateFipsCode];
+                    
+                    if (state) {
+                        // We'll need to look up county names by FIPS code
+                        // For now, let's draw all counties and handle the lookup
+                        processCountyFeature(feature, state);
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading TopoJSON:', error);
+                // Fallback to simplified visualization
+                loadSimplifiedVersion();
+            }
+        }
+
+        // Simplified version that doesn't require external TopoJSON library
+        function loadSimplifiedVersion() {
+            console.log('Loading simplified county visualization...');
+            
+            // Create a simpler GeoJSON-based visualization
+            // Using Eric Celeste's US counties GeoJSON
+            fetch('https://raw.githubusercontent.com/deldersveld/topojson/master/countries/us-states/NE-31-nebraska-counties.json')
+                .then(response => response.json())
+                .then(data => {
+                    // Check if it's TopoJSON or GeoJSON
+                    if (data.type === 'Topology') {
+                        console.log('Nebraska data loaded (TopoJSON format)');
+                        processTopoJsonCounties(data, 'NE');
+                    } else {
+                        processGeoJsonCounties(data, 'NE');
+                    }
+                })
+                .catch(err => console.error('NE counties error:', err));
+
+            fetch('https://raw.githubusercontent.com/deldersveld/topojson/master/countries/us-states/IA-19-iowa-counties.json')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.type === 'Topology') {
+                        console.log('Iowa data loaded (TopoJSON format)');
+                        processTopoJsonCounties(data, 'IA');
+                    } else {
+                        processGeoJsonCounties(data, 'IA');
+                    }
+                })
+                .catch(err => console.error('IA counties error:', err));
+
+            fetch('https://raw.githubusercontent.com/deldersveld/topojson/master/countries/us-states/SD-46-south-dakota-counties.json')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.type === 'Topology') {
+                        console.log('South Dakota data loaded (TopoJSON format)');
+                        processTopoJsonCounties(data, 'SD');
+                    } else {
+                        processGeoJsonCounties(data, 'SD');
+                    }
+                })
+                .catch(err => console.error('SD counties error:', err));
+        }
+
+        function processTopoJsonCounties(topoData, state) {
+            // Extract the first object from the TopoJSON
+            const objectKey = Object.keys(topoData.objects)[0];
+            const geoData = topojson.feature(topoData, topoData.objects[objectKey]);
+            processGeoJsonCounties(geoData, state);
+        }
+
+        function processGeoJsonCounties(geoData, state) {
+            L.geoJSON(geoData, {
+                style: function(feature) {
+                    const countyName = feature.properties.name || feature.properties.NAME || feature.properties.COUNTY;
+                    const countyKey = `${countyName}, ${state}`;
+                    
+                    let fillColor = '#cccccc';
+                    let agreement = null;
+
+                    // Check LU 427 jurisdictions first
+                    if (jurisdictions[countyKey]) {
+                        agreement = jurisdictions[countyKey];
+                        fillColor = colors[agreement];
+                    }
+                    // Check LU 1306 (all NE except 4 counties, plus specific IA counties)
+                    else if (state === 'NE' && !lu1306Excluded.includes(countyKey)) {
+                        agreement = 'LU1306';
+                        fillColor = colors.LU1306;
+                    }
+                    else if (state === 'IA' && ['Audubon, IA', 'Cass, IA', 'Fremont, IA', 'Harrison, IA', 'Mills, IA', 'Montgomery, IA', 'Page, IA', 'Pottawattamie, IA', 'Shelby, IA'].includes(countyKey)) {
+                        agreement = 'LU1306';
+                        fillColor = colors.LU1306;
+                    }
+                    // Check LU 1463
+                    else if (state === 'NE') {
+                        agreement = 'LU1463';
+                        fillColor = colors.LU1463;
+                    }
+                    else if (lu1463IowaCcounties.includes(countyKey)) {
+                        agreement = 'LU1463';
+                        fillColor = colors.LU1463;
+                    }
+                    else if (countyKey === 'Union, SD') {
+                        agreement = 'LU1463';
+                        fillColor = colors.LU1463;
+                    }
+
+                    return {
+                        fillColor: fillColor,
+                        weight: 1,
+                        opacity: 1,
+                        color: '#333',
+                        fillOpacity: 0.6
+                    };
+                },
+                onEachFeature: function(feature, layer) {
+                    const countyName = feature.properties.name || feature.properties.NAME || feature.properties.COUNTY;
+                    const countyKey = `${countyName}, ${state}`;
+                    
+                    let agreementText = 'Not in jurisdiction';
+                    let localInfo = '';
+
+                    if (jurisdictions[countyKey] === 'LU427_Metro') {
+                        agreementText = 'Carpenters LU 427 - Metro Agreement';
+                        localInfo = '10761 Virginia Plaza, Papillion NE 68128<br>Phone: 402-571-2561';
+                    } else if (jurisdictions[countyKey] === 'LU427_LincolnOutstate') {
+                        agreementText = 'Carpenters LU 427 - Lincoln & Outstate Agreement';
+                        localInfo = '10761 Virginia Plaza, Papillion NE 68128<br>Phone: 402-571-2561';
+                    } else if ((state === 'NE' && !lu1306Excluded.includes(countyKey)) || 
+                               (state === 'IA' && ['Audubon, IA', 'Cass, IA', 'Fremont, IA', 'Harrison, IA', 'Mills, IA', 'Montgomery, IA', 'Page, IA', 'Pottawattamie, IA', 'Shelby, IA'].includes(countyKey))) {
+                        agreementText = 'Interior Systems LU 1306';
+                        localInfo = '10761 Virginia Plaza, Papillion NE 68128<br>Phone: 402-571-2561';
+                    } else if (state === 'NE' || lu1463IowaCcounties.includes(countyKey) || countyKey === 'Union, SD') {
+                        agreementText = 'Millwright LU 1463';
+                        localInfo = '10761 Virginia Plaza, Papillion NE 68128<br>Phone: 402-571-2561';
+                    }
+
+                    layer.bindPopup(`
+                        <h4>${countyName} County, ${state}</h4>
+                        <p><strong>${agreementText}</strong></p>
+                        <p>${localInfo}</p>
+                    `);
+
+                    layer.on({
+                        mouseover: function(e) {
+                            const layer = e.target;
+                            layer.setStyle({
+                                weight: 3,
+                                fillOpacity: 0.8
+                            });
+                        },
+                        mouseout: function(e) {
+                            const layer = e.target;
+                            layer.setStyle({
+                                weight: 1,
+                                fillOpacity: 0.6
+                            });
+                        }
+                    });
+                }
+            }).addTo(map);
+        }
+
+        // Add print button (optional)
+        const printControl = L.control({position: 'topright'});
+        printControl.onAdd = function(map) {
+            const div = L.DomUtil.create('div', 'print-control');
+            div.innerHTML = '<button onclick="window.print()" style="padding: 8px 12px; background: white; border: 2px solid #1a4d2e; border-radius: 4px; cursor: pointer; font-weight: bold; color: #1a4d2e;">🖨️ Print Map</button>';
+            return div;
+        };
+        printControl.addTo(map);
+    </script>
+</body>
+</html>
