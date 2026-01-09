@@ -23,7 +23,7 @@ An interactive web map showing the contract jurisdictions for:
 4. Under "Source", select **Deploy from a branch**
 5. Select **main** branch and **/ (root)** folder
 6. Click **Save**
-7. Your map will be available at: `https://[your-username].github.io/[repository-name]/`
+7. Your map will be available at: `https://dmwilsonkc.github.io/NE-IAContractAreas/`
 
 ### Option 2: Local Viewing
 
