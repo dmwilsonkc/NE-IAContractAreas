@@ -1,73 +1,644 @@
-Test map · HTML
-Copy
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Simple Map Test</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Union Contract Jurisdictions - Nebraska & Iowa</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        #map { 
-            height: 600px; 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        #header {
+            background-color: #1a4d2e;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        #header h1 {
+            margin-bottom: 8px;
+            font-size: 26px;
+        }
+
+        #header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .tabs-container {
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .tab-button {
+            padding: 15px 30px;
+            cursor: pointer;
+            background-color: white;
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+            color: #555;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button:hover {
+            background-color: #f8f8f8;
+            color: #1a4d2e;
+        }
+
+        .tab-button.active {
+            color: #1a4d2e;
+            border-bottom: 3px solid #1a4d2e;
+        }
+
+        .tab-content {
+            display: none;
+            position: relative;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .map-container {
+            height: calc(100vh - 180px);
+            position: relative;
+        }
+
+        .map-container > div[id^="map-"] {
+            height: 100%;
             width: 100%;
         }
-        body {
-            margin: 0;
-            padding: 20px;
+
+        .legend {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            position: absolute;
+            bottom: 30px;
+            right: 10px;
+            z-index: 1000;
+            max-width: 350px;
+        }
+
+        .legend h3 {
+            margin-bottom: 10px;
+            font-size: 16px;
+            border-bottom: 2px solid #1a4d2e;
+            padding-bottom: 5px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 13px;
+        }
+
+        .legend-color {
+            width: 30px;
+            height: 20px;
+            margin-right: 10px;
+            border: 1px solid #666;
+            border-radius: 3px;
+        }
+
+        .local-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+        }
+
+        .print-control {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+        }
+
+        .print-btn {
+            padding: 10px 15px;
+            background: white;
+            border: 2px solid #1a4d2e;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #1a4d2e;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .print-btn:hover {
+            background-color: #1a4d2e;
+            color: white;
+        }
+
+        /* Print styles */
+        @media print {
+            body {
+                background-color: white;
+            }
+
+            .tabs-container {
+                display: none;
+            }
+
+            .tab-content {
+                display: block !important;
+                page-break-after: always;
+            }
+
+            .map-container {
+                height: 900px !important;
+            }
+
+            .legend {
+                position: relative;
+                bottom: auto;
+                right: auto;
+                box-shadow: none;
+                border: 1px solid #ccc;
+                margin: 20px;
+            }
+
+            .print-control {
+                display: none;
+            }
+
+            .leaflet-control-zoom {
+                display: none;
+            }
+        }
+
+        .leaflet-popup-content {
+            font-size: 14px;
+        }
+
+        .leaflet-popup-content h4 {
+            margin-bottom: 8px;
+            color: #1a4d2e;
+        }
+
+        .leaflet-popup-content p {
+            margin: 4px 0;
+            font-size: 12px;
         }
     </style>
 </head>
 <body>
-    <h1>Simple Leaflet Test</h1>
-    <p>If you see a map below with tiles, Leaflet is working correctly.</p>
-    <div id="map"></div>
-    
+    <div id="header">
+        <h1>Union Contract Jurisdictions</h1>
+        <p>10761 Virginia Plaza, Papillion NE 68128 | Phone: 402-571-2561</p>
+    </div>
+
+    <div class="tabs-container">
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('lu427')">Carpenters LU 427</button>
+            <button class="tab-button" onclick="switchTab('lu1306')">Interior Systems LU 1306</button>
+            <button class="tab-button" onclick="switchTab('lu1463')">Millwright LU 1463</button>
+        </div>
+    </div>
+
+    <!-- LU 427 Tab -->
+    <div id="lu427" class="tab-content active">
+        <div class="map-container">
+            <div id="map-lu427"></div>
+            <div class="print-control">
+                <button class="print-btn" onclick="window.print()">🖨️ Print</button>
+            </div>
+            <div class="legend">
+                <h3>Carpenters LU 427</h3>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #2E86AB;"></div>
+                    <span>Metro Agreement (22 NE + 9 IA counties)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #A23B72;"></div>
+                    <span>Lincoln & Outstate Agreement (71 NE counties)</span>
+                </div>
+                <div class="local-info">
+                    <strong>Local Office:</strong><br>
+                    10761 Virginia Plaza, Papillion NE 68128<br>
+                    Phone: 402-571-2561
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LU 1306 Tab -->
+    <div id="lu1306" class="tab-content">
+        <div class="map-container">
+            <div id="map-lu1306"></div>
+            <div class="print-control">
+                <button class="print-btn" onclick="window.print()">🖨️ Print</button>
+            </div>
+            <div class="legend">
+                <h3>Interior Systems LU 1306</h3>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #F18F01;"></div>
+                    <span>LU 1306 Agreement</span>
+                </div>
+                <div style="font-size: 12px; margin-top: 10px; color: #555;">
+                    <strong>Coverage:</strong><br>
+                    • All Nebraska counties EXCEPT Cedar, Dakota, Dixon, and Thurston<br>
+                    • Iowa: Audubon, Cass, Fremont, Harrison, Mills, Montgomery, Page, Pottawattamie, Shelby
+                </div>
+                <div class="local-info">
+                    <strong>Local Office:</strong><br>
+                    10761 Virginia Plaza, Papillion NE 68128<br>
+                    Phone: 402-571-2561
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LU 1463 Tab -->
+    <div id="lu1463" class="tab-content">
+        <div class="map-container">
+            <div id="map-lu1463"></div>
+            <div class="print-control">
+                <button class="print-btn" onclick="window.print()">🖨️ Print</button>
+            </div>
+            <div class="legend">
+                <h3>Millwright LU 1463</h3>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #6A994E;"></div>
+                    <span>LU 1463 Agreement</span>
+                </div>
+                <div style="font-size: 12px; margin-top: 10px; color: #555;">
+                    <strong>Coverage:</strong><br>
+                    • All Nebraska counties (93)<br>
+                    • 52 Iowa counties<br>
+                    • Union County, South Dakota
+                </div>
+                <div class="local-info">
+                    <strong>Local Office:</strong><br>
+                    10761 Virginia Plaza, Papillion NE 68128<br>
+                    Phone: 402-571-2561
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        console.log('Starting map initialization...');
-        
-        try {
-            var map = L.map('map').setView([41.5, -98.5], 7);
-            console.log('Map created successfully');
+        // Initialize maps
+        let maps = {
+            lu427: null,
+            lu1306: null,
+            lu1463: null
+        };
+
+        // County data will be stored here
+        let countyData = null;
+
+        // Define colors for each agreement
+        const colors = {
+            'LU427_Metro': '#2E86AB',
+            'LU427_LincolnOutstate': '#A23B72',
+            'LU1306': '#F18F01',
+            'LU1463': '#6A994E'
+        };
+
+        // LU 427 Metro Agreement counties
+        const lu427MetroCounties = [
+            // Nebraska
+            'Antelope, NE', 'Boone, NE', 'Burt, NE', 'Butler, NE', 'Cass, NE', 'Colfax, NE',
+            'Cuming, NE', 'Dodge, NE', 'Douglas, NE', 'Knox, NE', 'Madison, NE', 'Merrick, NE',
+            'Nance, NE', 'Otoe, NE', 'Pierce, NE', 'Platte, NE', 'Polk, NE', 'Sarpy, NE',
+            'Saunders, NE', 'Stanton, NE', 'Washington, NE', 'Wayne, NE',
+            // Iowa
+            'Audubon, IA', 'Cass, IA', 'Fremont, IA', 'Harrison, IA', 'Mills, IA',
+            'Montgomery, IA', 'Page, IA', 'Pottawattamie, IA', 'Shelby, IA'
+        ];
+
+        // LU 427 Lincoln and Outstate counties
+        const lu427OutstateCounties = [
+            'Clay, NE', 'Fillmore, NE', 'Gage, NE', 'Hamilton, NE', 'Jefferson, NE', 'Johnson, NE',
+            'Lancaster, NE', 'Nemaha, NE', 'Nuckolls, NE', 'Pawnee, NE', 'Richardson, NE',
+            'Saline, NE', 'Seward, NE', 'Thayer, NE', 'York, NE', 'Adams, NE', 'Arthur, NE',
+            'Banner, NE', 'Blaine, NE', 'Box Butte, NE', 'Boyd, NE', 'Brown, NE', 'Buffalo, NE',
+            'Chase, NE', 'Cherry, NE', 'Cheyenne, NE', 'Custer, NE', 'Dawes, NE', 'Dawson, NE',
+            'Deuel, NE', 'Dundy, NE', 'Franklin, NE', 'Frontier, NE', 'Furnas, NE', 'Garden, NE',
+            'Garfield, NE', 'Gosper, NE', 'Grant, NE', 'Greeley, NE', 'Hall, NE', 'Harlan, NE',
+            'Hayes, NE', 'Hitchcock, NE', 'Holt, NE', 'Hooker, NE', 'Howard, NE', 'Kearney, NE',
+            'Keith, NE', 'Keya Paha, NE', 'Kimball, NE', 'Lincoln, NE', 'Logan, NE', 'Loup, NE',
+            'McPherson, NE', 'Morrill, NE', 'Perkins, NE', 'Phelps, NE', 'Red Willow, NE',
+            'Rock, NE', 'Scotts Bluff, NE', 'Sheridan, NE', 'Sherman, NE', 'Sioux, NE',
+            'Thomas, NE', 'Valley, NE', 'Webster, NE', 'Wheeler, NE'
+        ];
+
+        // LU 1306 excluded counties
+        const lu1306ExcludedNE = ['Cedar, NE', 'Dakota, NE', 'Dixon, NE', 'Thurston, NE'];
+
+        // LU 1306 Iowa counties
+        const lu1306IowaCounties = [
+            'Audubon, IA', 'Cass, IA', 'Fremont, IA', 'Harrison, IA', 'Mills, IA',
+            'Montgomery, IA', 'Page, IA', 'Pottawattamie, IA', 'Shelby, IA'
+        ];
+
+        // LU 1463 Iowa counties
+        const lu1463IowaCounties = [
+            'Adair, IA', 'Adams, IA', 'Audubon, IA', 'Boone, IA', 'Buena Vista, IA',
+            'Calhoun, IA', 'Carroll, IA', 'Cass, IA', 'Cherokee, IA', 'Clarke, IA',
+            'Clay, IA', 'Crawford, IA', 'Dallas, IA', 'Decatur, IA', 'Dickinson, IA',
+            'Emmet, IA', 'Fremont, IA', 'Greene, IA', 'Guthrie, IA', 'Hamilton, IA',
+            'Hardin, IA', 'Harrison, IA', 'Humboldt, IA', 'Ida, IA', 'Jasper, IA',
+            'Lucas, IA', 'Lyon, IA', 'Madison, IA', 'Marion, IA', 'Marshall, IA',
+            'Mills, IA', 'Monona, IA', 'Montgomery, IA', "O'Brien, IA", 'Osceola, IA',
+            'Page, IA', 'Palo Alto, IA', 'Plymouth, IA', 'Pocahontas, IA', 'Polk, IA',
+            'Pottawattamie, IA', 'Poweshiek, IA', 'Ringgold, IA', 'Sac, IA', 'Shelby, IA',
+            'Sioux, IA', 'Story, IA', 'Taylor, IA', 'Union, IA', 'Warren, IA',
+            'Webster, IA', 'Woodbury, IA'
+        ];
+
+        // FIPS code to county name mapping
+        const fipsToCounty = {
+            // Nebraska FIPS codes (31xxx)
+            '31001': 'Adams, NE', '31003': 'Antelope, NE', '31005': 'Arthur, NE', '31007': 'Banner, NE',
+            '31009': 'Blaine, NE', '31011': 'Boone, NE', '31013': 'Box Butte, NE', '31015': 'Boyd, NE',
+            '31017': 'Brown, NE', '31019': 'Buffalo, NE', '31021': 'Burt, NE', '31023': 'Butler, NE',
+            '31025': 'Cass, NE', '31027': 'Cedar, NE', '31029': 'Chase, NE', '31031': 'Cherry, NE',
+            '31033': 'Cheyenne, NE', '31035': 'Clay, NE', '31037': 'Colfax, NE', '31039': 'Cuming, NE',
+            '31041': 'Custer, NE', '31043': 'Dakota, NE', '31045': 'Dawes, NE', '31047': 'Dawson, NE',
+            '31049': 'Deuel, NE', '31051': 'Dixon, NE', '31053': 'Dodge, NE', '31055': 'Douglas, NE',
+            '31057': 'Dundy, NE', '31059': 'Fillmore, NE', '31061': 'Franklin, NE', '31063': 'Frontier, NE',
+            '31065': 'Furnas, NE', '31067': 'Gage, NE', '31069': 'Garden, NE', '31071': 'Garfield, NE',
+            '31073': 'Gosper, NE', '31075': 'Grant, NE', '31077': 'Greeley, NE', '31079': 'Hall, NE',
+            '31081': 'Hamilton, NE', '31083': 'Harlan, NE', '31085': 'Hayes, NE', '31087': 'Hitchcock, NE',
+            '31089': 'Holt, NE', '31091': 'Hooker, NE', '31093': 'Howard, NE', '31095': 'Jefferson, NE',
+            '31097': 'Johnson, NE', '31099': 'Kearney, NE', '31101': 'Keith, NE', '31103': 'Keya Paha, NE',
+            '31105': 'Kimball, NE', '31107': 'Knox, NE', '31109': 'Lancaster, NE', '31111': 'Lincoln, NE',
+            '31113': 'Logan, NE', '31115': 'Loup, NE', '31117': 'McPherson, NE', '31119': 'Madison, NE',
+            '31121': 'Merrick, NE', '31123': 'Morrill, NE', '31125': 'Nance, NE', '31127': 'Nemaha, NE',
+            '31129': 'Nuckolls, NE', '31131': 'Otoe, NE', '31133': 'Pawnee, NE', '31135': 'Perkins, NE',
+            '31137': 'Phelps, NE', '31139': 'Pierce, NE', '31141': 'Platte, NE', '31143': 'Polk, NE',
+            '31145': 'Red Willow, NE', '31147': 'Richardson, NE', '31149': 'Rock, NE', '31151': 'Saline, NE',
+            '31153': 'Sarpy, NE', '31155': 'Saunders, NE', '31157': 'Scotts Bluff, NE', '31159': 'Seward, NE',
+            '31161': 'Sheridan, NE', '31163': 'Sherman, NE', '31165': 'Sioux, NE', '31167': 'Stanton, NE',
+            '31169': 'Thayer, NE', '31171': 'Thomas, NE', '31173': 'Thurston, NE', '31175': 'Valley, NE',
+            '31177': 'Washington, NE', '31179': 'Wayne, NE', '31181': 'Webster, NE', '31183': 'Wheeler, NE',
+            '31185': 'York, NE',
             
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors',
-                maxZoom: 18
-            }).addTo(map);
-            console.log('Tiles added successfully');
+            // Iowa FIPS codes (19xxx)
+            '19001': 'Adair, IA', '19003': 'Adams, IA', '19007': 'Audubon, IA', '19011': 'Boone, IA',
+            '19021': 'Buena Vista, IA', '19025': 'Calhoun, IA', '19027': 'Carroll, IA', '19029': 'Cass, IA',
+            '19035': 'Cherokee, IA', '19039': 'Clarke, IA', '19041': 'Clay, IA', '19047': 'Crawford, IA',
+            '19049': 'Dallas, IA', '19051': 'Decatur, IA', '19059': 'Dickinson, IA', '19063': 'Emmet, IA',
+            '19071': 'Fremont, IA', '19073': 'Greene, IA', '19077': 'Guthrie, IA', '19079': 'Hamilton, IA',
+            '19083': 'Hardin, IA', '19085': 'Harrison, IA', '19091': 'Humboldt, IA', '19093': 'Ida, IA',
+            '19099': 'Jasper, IA', '19117': 'Lucas, IA', '19119': 'Lyon, IA', '19121': 'Madison, IA',
+            '19125': 'Marion, IA', '19127': 'Marshall, IA', '19129': 'Mills, IA', '19133': 'Monona, IA',
+            '19137': 'Montgomery, IA', '19141': "O'Brien, IA", '19143': 'Osceola, IA', '19145': 'Page, IA',
+            '19147': 'Palo Alto, IA', '19149': 'Plymouth, IA', '19151': 'Pocahontas, IA', '19153': 'Polk, IA',
+            '19155': 'Pottawattamie, IA', '19157': 'Poweshiek, IA', '19159': 'Ringgold, IA', '19161': 'Sac, IA',
+            '19165': 'Shelby, IA', '19167': 'Sioux, IA', '19169': 'Story, IA', '19173': 'Taylor, IA',
+            '19175': 'Union, IA', '19181': 'Warren, IA', '19187': 'Webster, IA', '19193': 'Woodbury, IA',
             
-            // Test loading county data
+            // South Dakota FIPS codes (46xxx)
+            '46127': 'Union, SD'
+        };
+
+        function switchTab(tabName) {
+            console.log('Switching to tab:', tabName);
+            
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked button
+            document.querySelectorAll('.tab-button').forEach(button => {
+                if (button.onclick && button.onclick.toString().includes(tabName)) {
+                    button.classList.add('active');
+                }
+            });
+
+            // Initialize map if not already done
+            if (!maps[tabName]) {
+                console.log('Map not initialized, creating:', tabName);
+                setTimeout(function() {
+                    initializeMap(tabName);
+                }, 100);
+            } else {
+                // Invalidate size to handle any resize issues
+                console.log('Map exists, invalidating size:', tabName);
+                setTimeout(function() {
+                    maps[tabName].invalidateSize();
+                }, 100);
+            }
+        }
+
+        function initializeMap(mapId) {
+            console.log('Initializing map:', mapId);
+            const mapElement = document.getElementById(`map-${mapId}`);
+            
+            if (!mapElement) {
+                console.error('Map element not found:', `map-${mapId}`);
+                return;
+            }
+            
+            // Create map centered on Nebraska/Iowa
+            try {
+                maps[mapId] = L.map(mapElement, {
+                    preferCanvas: true
+                }).setView([41.5, -98.5], 7);
+                
+                console.log('Map created:', mapId);
+
+                // Add base map
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                    maxZoom: 18
+                }).addTo(maps[mapId]);
+                
+                console.log('Tile layer added:', mapId);
+                
+                // Force map to recalculate size after initialization
+                setTimeout(function() {
+                    if (maps[mapId]) {
+                        maps[mapId].invalidateSize();
+                        console.log('Map size invalidated:', mapId);
+                    }
+                }, 200);
+
+                // Load county data if not already loaded
+                if (countyData) {
+                    console.log('Using cached county data for:', mapId);
+                    renderCountiesForMap(mapId);
+                } else {
+                    console.log('Loading county data for:', mapId);
+                    loadCountyData(mapId);
+                }
+            } catch (error) {
+                console.error('Error initializing map:', mapId, error);
+            }
+        }
+
+        function loadCountyData(mapId) {
+            console.log('Fetching county data...');
             fetch('https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json')
                 .then(response => {
-                    console.log('County data fetch response:', response.status);
+                    console.log('County data response received');
                     return response.json();
                 })
                 .then(data => {
-                    console.log('County data loaded, features:', data.features.length);
-                    
-                    // Add just Nebraska counties as a test
-                    L.geoJSON(data, {
-                        filter: function(feature) {
-                            return feature.id.startsWith('31'); // Nebraska
-                        },
-                        style: {
-                            fillColor: '#2E86AB',
-                            weight: 1,
-                            color: '#333',
-                            fillOpacity: 0.5
-                        }
-                    }).addTo(map);
-                    
-                    console.log('Nebraska counties added to map');
+                    console.log('County data parsed, features:', data.features ? data.features.length : 0);
+                    countyData = data;
+                    renderCountiesForMap(mapId);
                 })
                 .catch(error => {
-                    console.error('Error loading counties:', error);
+                    console.error('Error loading county data:', error);
+                    alert('Unable to load county boundaries. Please check your internet connection and refresh the page.');
                 });
-                
-        } catch (error) {
-            console.error('Error creating map:', error);
-            alert('Error: ' + error.message);
         }
+
+        function renderCountiesForMap(mapId) {
+            console.log('Rendering counties for map:', mapId);
+            let countiesAdded = 0;
+            
+            try {
+                L.geoJSON(countyData, {
+                    filter: function(feature) {
+                        const fips = feature.id;
+                        const stateCode = fips.substring(0, 2);
+                        const countyKey = fipsToCounty[fips];
+                        
+                        // Only show counties in NE (31), IA (19), or SD (46)
+                        if (!['31', '19', '46'].includes(stateCode)) return false;
+                        if (!countyKey) return false;
+
+                        // Filter based on which map we're rendering
+                        let include = false;
+                        if (mapId === 'lu427') {
+                            include = lu427MetroCounties.includes(countyKey) || lu427OutstateCounties.includes(countyKey);
+                        } else if (mapId === 'lu1306') {
+                            include = (countyKey.endsWith(', NE') && !lu1306ExcludedNE.includes(countyKey)) ||
+                                   lu1306IowaCounties.includes(countyKey);
+                        } else if (mapId === 'lu1463') {
+                            include = countyKey.endsWith(', NE') || 
+                                   lu1463IowaCounties.includes(countyKey) ||
+                                   countyKey === 'Union, SD';
+                        }
+                        
+                        if (include) countiesAdded++;
+                        return include;
+                    },
+                    style: function(feature) {
+                        const fips = feature.id;
+                        const countyKey = fipsToCounty[fips];
+                        let fillColor = '#cccccc';
+
+                        if (mapId === 'lu427') {
+                            if (lu427MetroCounties.includes(countyKey)) {
+                                fillColor = colors.LU427_Metro;
+                            } else if (lu427OutstateCounties.includes(countyKey)) {
+                                fillColor = colors.LU427_LincolnOutstate;
+                            }
+                        } else if (mapId === 'lu1306') {
+                            fillColor = colors.LU1306;
+                        } else if (mapId === 'lu1463') {
+                            fillColor = colors.LU1463;
+                        }
+
+                        return {
+                            fillColor: fillColor,
+                            weight: 1,
+                            opacity: 1,
+                            color: '#333',
+                            fillOpacity: 0.6
+                        };
+                    },
+                    onEachFeature: function(feature, layer) {
+                        const fips = feature.id;
+                        const countyKey = fipsToCounty[fips];
+                        if (!countyKey) return;
+
+                        const [countyName, state] = countyKey.split(', ');
+                        let agreementText = '';
+                        
+                        if (mapId === 'lu427') {
+                            if (lu427MetroCounties.includes(countyKey)) {
+                                agreementText = 'Carpenters LU 427 - Metro Agreement';
+                            } else if (lu427OutstateCounties.includes(countyKey)) {
+                                agreementText = 'Carpenters LU 427 - Lincoln & Outstate Agreement';
+                            }
+                        } else if (mapId === 'lu1306') {
+                            agreementText = 'Interior Systems LU 1306';
+                        } else if (mapId === 'lu1463') {
+                            agreementText = 'Millwright LU 1463';
+                        }
+
+                        layer.bindPopup(`
+                            <h4>${countyName} County, ${state}</h4>
+                            <p><strong>${agreementText}</strong></p>
+                            <p>10761 Virginia Plaza, Papillion NE 68128<br>Phone: 402-571-2561</p>
+                        `);
+
+                        layer.on({
+                            mouseover: function(e) {
+                                layer.setStyle({ weight: 3, fillOpacity: 0.8 });
+                            },
+                            mouseout: function(e) {
+                                layer.setStyle({ weight: 1, fillOpacity: 0.6 });
+                            }
+                        });
+                    }
+                }).addTo(maps[mapId]);
+                
+                console.log('Counties added to map ' + mapId + ':', countiesAdded);
+            } catch (error) {
+                console.error('Error rendering counties for map:', mapId, error);
+            }
+        }
+
+        // Initialize the first map on page load
+        window.addEventListener('load', function() {
+            console.log('Page loaded, initializing first map...');
+            
+            // Check if Leaflet is loaded
+            if (typeof L === 'undefined') {
+                console.error('Leaflet library (L) is not loaded!');
+                alert('Error: Map library failed to load. Please refresh the page.');
+                return;
+            }
+            
+            console.log('Leaflet version:', L.version);
+            
+            // Small delay to ensure CSS is fully applied
+            setTimeout(function() {
+                initializeMap('lu427');
+            }, 100);
+        });
     </script>
 </body>
 </html>
