@@ -323,126 +323,128 @@
             'Webster, IA', 'Woodbury, IA'
         ];
 
-        // Load county boundaries using the US Atlas TopoJSON
-        // We'll use a CDN-hosted version that includes county boundaries
+        // Load county boundaries - using reliable public sources
         loadCountyBoundaries();
 
-        async function loadCountyBoundaries() {
-            try {
-                // Load county boundaries for NE, IA, and SD
-                const response = await fetch('https://cdn.jsdelivr.net/npm/us-atlas@3/counties-10m.json');
-                const us = await response.json();
-                
-                // Convert TopoJSON to GeoJSON
-                const counties = topojson.feature(us, us.objects.counties);
-                
-                // We need state FIPS codes: NE=31, IA=19, SD=46
-                const stateFips = { '31': 'NE', '19': 'IA', '46': 'SD' };
-                
-                // Filter and process counties
-                counties.features.forEach(feature => {
-                    const fips = feature.id;
-                    const stateFipsCode = fips.substring(0, 2);
-                    const state = stateFips[stateFipsCode];
-                    
-                    if (state) {
-                        // We'll need to look up county names by FIPS code
-                        // For now, let's draw all counties and handle the lookup
-                        processCountyFeature(feature, state);
-                    }
-                });
-            } catch (error) {
-                console.error('Error loading TopoJSON:', error);
-                // Fallback to simplified visualization
-                loadSimplifiedVersion();
-            }
-        }
-
-        // Simplified version that doesn't require external TopoJSON library
-        function loadSimplifiedVersion() {
-            console.log('Loading simplified county visualization...');
+        function loadCountyBoundaries() {
+            console.log('Loading county boundaries...');
             
-            // Create a simpler GeoJSON-based visualization
-            // Using Eric Celeste's US counties GeoJSON
-            fetch('https://raw.githubusercontent.com/deldersveld/topojson/master/countries/us-states/NE-31-nebraska-counties.json')
+            // Load Nebraska counties
+            fetch('https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json')
                 .then(response => response.json())
                 .then(data => {
-                    // Check if it's TopoJSON or GeoJSON
-                    if (data.type === 'Topology') {
-                        console.log('Nebraska data loaded (TopoJSON format)');
-                        processTopoJsonCounties(data, 'NE');
-                    } else {
-                        processGeoJsonCounties(data, 'NE');
-                    }
+                    console.log('County data loaded successfully');
+                    processCountiesWithFIPS(data);
                 })
-                .catch(err => console.error('NE counties error:', err));
-
-            fetch('https://raw.githubusercontent.com/deldersveld/topojson/master/countries/us-states/IA-19-iowa-counties.json')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.type === 'Topology') {
-                        console.log('Iowa data loaded (TopoJSON format)');
-                        processTopoJsonCounties(data, 'IA');
-                    } else {
-                        processGeoJsonCounties(data, 'IA');
-                    }
-                })
-                .catch(err => console.error('IA counties error:', err));
-
-            fetch('https://raw.githubusercontent.com/deldersveld/topojson/master/countries/us-states/SD-46-south-dakota-counties.json')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.type === 'Topology') {
-                        console.log('South Dakota data loaded (TopoJSON format)');
-                        processTopoJsonCounties(data, 'SD');
-                    } else {
-                        processGeoJsonCounties(data, 'SD');
-                    }
-                })
-                .catch(err => console.error('SD counties error:', err));
+                .catch(error => {
+                    console.error('Error loading county data:', error);
+                    loadAlternativeSource();
+                });
         }
 
-        function processTopoJsonCounties(topoData, state) {
-            // Extract the first object from the TopoJSON
-            const objectKey = Object.keys(topoData.objects)[0];
-            const geoData = topojson.feature(topoData, topoData.objects[objectKey]);
-            processGeoJsonCounties(geoData, state);
+        function loadAlternativeSource() {
+            console.log('Trying alternative data source...');
+            
+            // Alternative: Load from another reliable source
+            Promise.all([
+                fetch('https://eric.clst.org/assets/wiki/uploads/Stuff/gz_2010_us_050_00_5m.json')
+                    .then(r => r.json()),
+            ])
+            .then(([countyData]) => {
+                console.log('Alternative source loaded');
+                processAlternativeCountyData(countyData);
+            })
+            .catch(err => {
+                console.error('Alternative source failed:', err);
+                // Last resort: show a message
+                alert('Unable to load county boundaries. Please check your internet connection and refresh the page.');
+            });
         }
 
-        function processGeoJsonCounties(geoData, state) {
-            L.geoJSON(geoData, {
+        // FIPS code to county name mapping for our states
+        const fipsToCounty = {
+            // Nebraska FIPS codes (31xxx)
+            '31001': 'Adams, NE', '31003': 'Antelope, NE', '31005': 'Arthur, NE', '31007': 'Banner, NE',
+            '31009': 'Blaine, NE', '31011': 'Boone, NE', '31013': 'Box Butte, NE', '31015': 'Boyd, NE',
+            '31017': 'Brown, NE', '31019': 'Buffalo, NE', '31021': 'Burt, NE', '31023': 'Butler, NE',
+            '31025': 'Cass, NE', '31027': 'Cedar, NE', '31029': 'Chase, NE', '31031': 'Cherry, NE',
+            '31033': 'Cheyenne, NE', '31035': 'Clay, NE', '31037': 'Colfax, NE', '31039': 'Cuming, NE',
+            '31041': 'Custer, NE', '31043': 'Dakota, NE', '31045': 'Dawes, NE', '31047': 'Dawson, NE',
+            '31049': 'Deuel, NE', '31051': 'Dixon, NE', '31053': 'Dodge, NE', '31055': 'Douglas, NE',
+            '31057': 'Dundy, NE', '31059': 'Fillmore, NE', '31061': 'Franklin, NE', '31063': 'Frontier, NE',
+            '31065': 'Furnas, NE', '31067': 'Gage, NE', '31069': 'Garden, NE', '31071': 'Garfield, NE',
+            '31073': 'Gosper, NE', '31075': 'Grant, NE', '31077': 'Greeley, NE', '31079': 'Hall, NE',
+            '31081': 'Hamilton, NE', '31083': 'Harlan, NE', '31085': 'Hayes, NE', '31087': 'Hitchcock, NE',
+            '31089': 'Holt, NE', '31091': 'Hooker, NE', '31093': 'Howard, NE', '31095': 'Jefferson, NE',
+            '31097': 'Johnson, NE', '31099': 'Kearney, NE', '31101': 'Keith, NE', '31103': 'Keya Paha, NE',
+            '31105': 'Kimball, NE', '31107': 'Knox, NE', '31109': 'Lancaster, NE', '31111': 'Lincoln, NE',
+            '31113': 'Logan, NE', '31115': 'Loup, NE', '31117': 'McPherson, NE', '31119': 'Madison, NE',
+            '31121': 'Merrick, NE', '31123': 'Morrill, NE', '31125': 'Nance, NE', '31127': 'Nemaha, NE',
+            '31129': 'Nuckolls, NE', '31131': 'Otoe, NE', '31133': 'Pawnee, NE', '31135': 'Perkins, NE',
+            '31137': 'Phelps, NE', '31139': 'Pierce, NE', '31141': 'Platte, NE', '31143': 'Polk, NE',
+            '31145': 'Red Willow, NE', '31147': 'Richardson, NE', '31149': 'Rock, NE', '31151': 'Saline, NE',
+            '31153': 'Sarpy, NE', '31155': 'Saunders, NE', '31157': 'Scotts Bluff, NE', '31159': 'Seward, NE',
+            '31161': 'Sheridan, NE', '31163': 'Sherman, NE', '31165': 'Sioux, NE', '31167': 'Stanton, NE',
+            '31169': 'Thayer, NE', '31171': 'Thomas, NE', '31173': 'Thurston, NE', '31175': 'Valley, NE',
+            '31177': 'Washington, NE', '31179': 'Wayne, NE', '31181': 'Webster, NE', '31183': 'Wheeler, NE',
+            '31185': 'York, NE',
+            
+            // Iowa FIPS codes (19xxx)
+            '19001': 'Adair, IA', '19003': 'Adams, IA', '19007': 'Audubon, IA', '19011': 'Boone, IA',
+            '19021': 'Buena Vista, IA', '19025': 'Calhoun, IA', '19027': 'Carroll, IA', '19029': 'Cass, IA',
+            '19035': 'Cherokee, IA', '19039': 'Clarke, IA', '19041': 'Clay, IA', '19047': 'Crawford, IA',
+            '19049': 'Dallas, IA', '19051': 'Decatur, IA', '19059': 'Dickinson, IA', '19063': 'Emmet, IA',
+            '19071': 'Fremont, IA', '19073': 'Greene, IA', '19077': 'Guthrie, IA', '19079': 'Hamilton, IA',
+            '19083': 'Hardin, IA', '19085': 'Harrison, IA', '19091': 'Humboldt, IA', '19093': 'Ida, IA',
+            '19099': 'Jasper, IA', '19117': 'Lucas, IA', '19119': 'Lyon, IA', '19121': 'Madison, IA',
+            '19125': 'Marion, IA', '19127': 'Marshall, IA', '19129': 'Mills, IA', '19133': 'Monona, IA',
+            '19137': 'Montgomery, IA', '19141': "O'Brien, IA", '19143': 'Osceola, IA', '19145': 'Page, IA',
+            '19147': 'Palo Alto, IA', '19149': 'Plymouth, IA', '19151': 'Pocahontas, IA', '19153': 'Polk, IA',
+            '19155': 'Pottawattamie, IA', '19157': 'Poweshiek, IA', '19159': 'Ringgold, IA', '19161': 'Sac, IA',
+            '19165': 'Shelby, IA', '19167': 'Sioux, IA', '19169': 'Story, IA', '19173': 'Taylor, IA',
+            '19175': 'Union, IA', '19181': 'Warren, IA', '19187': 'Webster, IA', '19193': 'Woodbury, IA',
+            
+            // South Dakota FIPS codes (46xxx)
+            '46127': 'Union, SD'
+        };
+
+        function processCountiesWithFIPS(geoJsonData) {
+            L.geoJSON(geoJsonData, {
+                filter: function(feature) {
+                    // Only show counties in NE (31), IA (19), or SD (46)
+                    const fips = feature.id;
+                    const stateCode = fips.substring(0, 2);
+                    return ['31', '19', '46'].includes(stateCode);
+                },
                 style: function(feature) {
-                    const countyName = feature.properties.name || feature.properties.NAME || feature.properties.COUNTY;
-                    const countyKey = `${countyName}, ${state}`;
+                    const fips = feature.id;
+                    const countyKey = fipsToCounty[fips];
+                    
+                    if (!countyKey) {
+                        return { fillColor: '#cccccc', weight: 1, opacity: 1, color: '#333', fillOpacity: 0.3 };
+                    }
                     
                     let fillColor = '#cccccc';
-                    let agreement = null;
 
                     // Check LU 427 jurisdictions first
                     if (jurisdictions[countyKey]) {
-                        agreement = jurisdictions[countyKey];
-                        fillColor = colors[agreement];
+                        fillColor = colors[jurisdictions[countyKey]];
                     }
-                    // Check LU 1306 (all NE except 4 counties, plus specific IA counties)
-                    else if (state === 'NE' && !lu1306Excluded.includes(countyKey)) {
-                        agreement = 'LU1306';
+                    // Check LU 1306
+                    else if (countyKey.endsWith(', NE') && !lu1306Excluded.includes(countyKey)) {
                         fillColor = colors.LU1306;
                     }
-                    else if (state === 'IA' && ['Audubon, IA', 'Cass, IA', 'Fremont, IA', 'Harrison, IA', 'Mills, IA', 'Montgomery, IA', 'Page, IA', 'Pottawattamie, IA', 'Shelby, IA'].includes(countyKey)) {
-                        agreement = 'LU1306';
+                    else if (['Audubon, IA', 'Cass, IA', 'Fremont, IA', 'Harrison, IA', 'Mills, IA', 'Montgomery, IA', 'Page, IA', 'Pottawattamie, IA', 'Shelby, IA'].includes(countyKey)) {
                         fillColor = colors.LU1306;
                     }
                     // Check LU 1463
-                    else if (state === 'NE') {
-                        agreement = 'LU1463';
+                    else if (countyKey.endsWith(', NE')) {
                         fillColor = colors.LU1463;
                     }
                     else if (lu1463IowaCcounties.includes(countyKey)) {
-                        agreement = 'LU1463';
                         fillColor = colors.LU1463;
                     }
                     else if (countyKey === 'Union, SD') {
-                        agreement = 'LU1463';
                         fillColor = colors.LU1463;
                     }
 
@@ -455,8 +457,12 @@
                     };
                 },
                 onEachFeature: function(feature, layer) {
-                    const countyName = feature.properties.name || feature.properties.NAME || feature.properties.COUNTY;
-                    const countyKey = `${countyName}, ${state}`;
+                    const fips = feature.id;
+                    const countyKey = fipsToCounty[fips];
+                    
+                    if (!countyKey) return;
+                    
+                    const [countyName, state] = countyKey.split(', ');
                     
                     let agreementText = 'Not in jurisdiction';
                     let localInfo = '';
@@ -467,11 +473,11 @@
                     } else if (jurisdictions[countyKey] === 'LU427_LincolnOutstate') {
                         agreementText = 'Carpenters LU 427 - Lincoln & Outstate Agreement';
                         localInfo = '10761 Virginia Plaza, Papillion NE 68128<br>Phone: 402-571-2561';
-                    } else if ((state === 'NE' && !lu1306Excluded.includes(countyKey)) || 
-                               (state === 'IA' && ['Audubon, IA', 'Cass, IA', 'Fremont, IA', 'Harrison, IA', 'Mills, IA', 'Montgomery, IA', 'Page, IA', 'Pottawattamie, IA', 'Shelby, IA'].includes(countyKey))) {
+                    } else if ((countyKey.endsWith(', NE') && !lu1306Excluded.includes(countyKey)) || 
+                               ['Audubon, IA', 'Cass, IA', 'Fremont, IA', 'Harrison, IA', 'Mills, IA', 'Montgomery, IA', 'Page, IA', 'Pottawattamie, IA', 'Shelby, IA'].includes(countyKey)) {
                         agreementText = 'Interior Systems LU 1306';
                         localInfo = '10761 Virginia Plaza, Papillion NE 68128<br>Phone: 402-571-2561';
-                    } else if (state === 'NE' || lu1463IowaCcounties.includes(countyKey) || countyKey === 'Union, SD') {
+                    } else if (countyKey.endsWith(', NE') || lu1463IowaCcounties.includes(countyKey) || countyKey === 'Union, SD') {
                         agreementText = 'Millwright LU 1463';
                         localInfo = '10761 Virginia Plaza, Papillion NE 68128<br>Phone: 402-571-2561';
                     }
@@ -484,23 +490,21 @@
 
                     layer.on({
                         mouseover: function(e) {
-                            const layer = e.target;
-                            layer.setStyle({
-                                weight: 3,
-                                fillOpacity: 0.8
-                            });
+                            layer.setStyle({ weight: 3, fillOpacity: 0.8 });
                         },
                         mouseout: function(e) {
-                            const layer = e.target;
-                            layer.setStyle({
-                                weight: 1,
-                                fillOpacity: 0.6
-                            });
+                            layer.setStyle({ weight: 1, fillOpacity: 0.6 });
                         }
                     });
                 }
             }).addTo(map);
         }
+
+        function processAlternativeCountyData(geoData) {
+            // Process alternative format county data
+            processGeoJsonCounties(geoData, null);
+        }
+
 
         // Add print button (optional)
         const printControl = L.control({position: 'topright'});
