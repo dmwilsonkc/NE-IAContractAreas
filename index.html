@@ -572,10 +572,10 @@
 
                         return {
                             fillColor: fillColor,
-                            weight: 1,
+                            weight: 2,
                             opacity: 1,
-                            color: '#333',
-                            fillOpacity: 0.6
+                            color: 'white',
+                            fillOpacity: 0.7
                         };
                     },
                     onEachFeature: function(feature, layer) {
@@ -606,10 +606,10 @@
 
                         layer.on({
                             mouseover: function(e) {
-                                layer.setStyle({ weight: 3, fillOpacity: 0.8 });
+                                layer.setStyle({ weight: 3, color: '#666', fillOpacity: 0.9 });
                             },
                             mouseout: function(e) {
-                                layer.setStyle({ weight: 1, fillOpacity: 0.6 });
+                                layer.setStyle({ weight: 2, color: 'white', fillOpacity: 0.7 });
                             }
                         });
                     }
